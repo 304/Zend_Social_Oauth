@@ -1,0 +1,2 @@
+1. Add Zend Library
+2. Fill out /application/configs/social.ini with your application callbackUrl, consumerKey and consumerSecret. See http://tools.ietf.org/html/rfc5849.
