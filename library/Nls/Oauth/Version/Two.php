@@ -1,22 +1,24 @@
 <?php
 /**
- * My Oauth implementation for Oauth version 2.0
+ * Implementation for second version of OAuth protocol
  * @author Yaklushin Vasiliy <3a3a3a3@gmail.com>
  */
-class My_OauthV2
+class Nls_Oauth_Version_Two implements Nls_Oauth_Version_Interface
 {
-    /** @var My_Oauth_Adapter_Abstract */
-    private $_adapter = null;
+    /** @var Nls_Oauth_Adapter_Abstract */
+    protected $_adapter = null;
 
-    public function __construct(My_Oauth_Adapter_Abstract $adapter)
+    protected $_accessToken = null;
+
+    public function __construct(Nls_Oauth_Adapter_Abstract $adapter)
     {
         $this->_adapter = $adapter;
     }
 
     /**
-     * Redirect user to remote service page
+     * Send user to Oauth service authorization
      */
-    public function redirect()
+    public function authorize()
     {
         $config = $this->_adapter->getConfigOptions();
         $url = $config['requestTokenUrl'];
@@ -27,15 +29,17 @@ class My_OauthV2
         ));
 
         header('Location: ' . $url . '?' . $query);
+
         exit(1);
     }
 
     /**
-     * Get Access Token
+     * Request Access Token from Oauth service
+     *
      * @param array $queryData GET data returned in user's redirect from Provider
      * @return string
      */
-    public function getAccessToken($queryData)
+    public function requestAccessToken($queryData)
     {
         $config = $this->_adapter->getConfigOptions();
 
@@ -48,36 +52,28 @@ class My_OauthV2
 
         $accessTokenUrl = $config['accessTokenUrl'];
 
-        $accessToken = file_get_contents($accessTokenUrl . '?' . $query);
+        $this->_accessToken = file_get_contents($accessTokenUrl . '?' . $query);
 
-        $session = new Zend_Session_Namespace('myOauth');
-        $session->accessToken = $accessToken;
-
-        return $accessToken;
-    }
-    
-    /**
-     * Get user information
-     * @return stdClass
-     */
-    public function getUserInfo()
-    {
-        $session = new Zend_Session_Namespace('myOauth');
-        $accessToken = $session->accessToken;
-
-        return $this->_adapter->getUserInfo($accessToken);
+        return $this->_accessToken;
     }
 
     /**
-     * Get list of user friends
-     * @return stdClass
+     * Get user profile
+     *
+     * @return Nls_Oauth_UserProfile
      */
-    public function getFriendList()
+    public function getUserProfile()
     {
-        $session = new Zend_Session_Namespace('myOauth');
-        $accessToken = $session->accessToken;
+        return $this->_adapter->getUserProfile($this->_accessToken);
+    }
 
-        return $this->_adapter->getFriendList($accessToken);
-
+    /**
+     * Get user friends
+     * 
+     * @return Nls_Oauth_Friends
+     */
+    public function getFriends()
+    {
+        return $this->_adapter->getFriends($this->_accessToken);
     }
 }
